@@ -77,8 +77,8 @@ class PlanerQuadrotor():
             x[1],
             0,
             x[3],
-            -m*g,
-            x[4],
+            -g,
+            x[5],
             0
         ]])
         return f.T
