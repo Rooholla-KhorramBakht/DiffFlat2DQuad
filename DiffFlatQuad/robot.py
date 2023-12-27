@@ -1,6 +1,7 @@
 import pygame
 import numpy as np
 from sympy import symbols, Matrix, sin, cos
+import sympy as sp
 
 class PlanerQuadrotor():
     def __init__(self, dt=0.01, rendering = True):
@@ -15,8 +16,8 @@ class PlanerQuadrotor():
         self.gravity = np.array([0, 9.8])
         self.rendering = rendering
         self.dt = dt 
-        self.symbolic_state = Matrix(symbols('x_1,x_2,x_3,x_4,x_5,x_6'))
-        self.symbolic_input = Matrix(symbols('u_1,u_2'))
+        self.symbolic_state = sp.Matrix([sp.Function(f'x{i}')(sp.symbols('t')) for i in range(1,7)])
+        self.symbolic_input = sp.Matrix([sp.Function(f'u{i}')(sp.symbols('t')) for i in range(1,3)])
         if rendering:
             pygame.init()
             self.size = (1024, 768)
@@ -41,16 +42,16 @@ class PlanerQuadrotor():
 
     def step(self, T, F):
         self.x += self.v * self.dt
-        self.v += self.dt*((F*np.array([np.sin(self.theta), np.cos(self.theta)]))/self.mass-self.gravity)
+        self.v += self.dt*((F*np.array([-np.sin(self.theta), np.cos(self.theta)]))/self.mass-self.gravity)
         self.theta += self.omega*self.dt
-        self.omega += T/self.J
+        self.omega += self.dt*T/self.J
         if self.rendering:
             self.render()
 
     def render(self):
         self.screen.fill((255, 255, 255))  # Clear screen
         angle_degrees = np.degrees(self.theta) 
-        self.robot_img = pygame.transform.rotate(self.original_image, -angle_degrees)
+        self.robot_img = pygame.transform.rotate(self.original_image, angle_degrees)
         self.rect = self.robot_img.get_rect(center=np.array(self.size)/2 + np.diag([1,-1])@self.x*self.meter_to_pix)
         self.screen.blit(self.robot_img, self.rect)
         pygame.display.flip()
@@ -71,7 +72,7 @@ class PlanerQuadrotor():
         x5 = theta
         x6 = omega
         """
-        x = symbols('x_1,x_2,x_3,x_4,x_5,x_6')
+        x = self.symbolic_state
         m, J, g = symbols('m,J, g')
         f = Matrix([[
             x[1],
@@ -87,11 +88,11 @@ class PlanerQuadrotor():
         """
         return g(x). Not that u1 is thrust (F) and u2 is torque (T)
         """
-        x = symbols('x_1,x_2,x_3,x_4,x_5,x_6')
+        x = self.symbolic_state
         m, J, g = symbols('m,J, g')
         g = Matrix([[
             0,
-            (1/m)*sin(x[4]),
+            (-1/m)*sin(x[4]),
             0,
             (1/m)*cos(x[4]),
             0,
