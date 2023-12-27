@@ -56,6 +56,10 @@ class PlanerQuadrotor():
         self.screen.blit(self.robot_img, self.rect)
         pygame.display.flip()
 
+    def renderPoint(self, point):
+        pygame.draw.circle(self.screen, self.color, np.array(self.size)/2 + np.diag([1,-1])@point*self.meter_to_pix, 5)
+        pygame.display.flip()
+
     def running(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
