@@ -57,7 +57,7 @@ Before moving on to the control design, we first need to investigate the control
 &\mathbf{g}_1 = \left[\begin{matrix}0\\- \frac{\sin{\left(\operatorname{x_{5}}{\left(t \right)} \right)}}{m}\\0\\\frac{\cos{\left(\operatorname{x_{5}}{\left(t \right)} \right)}}{m}\\0\\0\end{matrix}\right], \
 \mathbf{g}_2 = \left[\begin{matrix}0\\0\\0\\0\\0\\\frac{1}{J}\end{matrix}\right] -->
 <p align="center">
-  <img src="docs/plant_decom_eq.png" alt="image" width="60%" height="auto"/>
+  <img src="docs/plant_decom_eq.png" alt="image" width="50%" height="auto"/>
 </p>
 
 We employ ideas from nonlinear control theory and differential geometry to investigate the controllability of the plant.
