@@ -1,4 +1,4 @@
-# DiffFlatQuad
+# DiffFlat2DQuad
 <p align="center">
   <img src="docs/without_flatness.gif" alt="GIF 1" width="350"/>
   <img src="docs/with_flatness.gif" alt="GIF 2" width="350"/>
