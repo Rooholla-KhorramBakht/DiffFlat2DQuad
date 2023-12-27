@@ -4,7 +4,8 @@ from sympy import symbols, Matrix, sin, cos
 import sympy as sp
 
 class PlanerQuadrotor():
-    def __init__(self, dt=0.01, rendering = True):
+    def __init__(self, dt=0.01, rendering = True, update_display = True):
+        self.update_display = update_display
         self.x = np.array([0.0, 0.])  # Start at the center of the screen
         self.v = np.array([0., 0.])  # Start at the center of the screen
         self.omega = 0.
@@ -54,7 +55,8 @@ class PlanerQuadrotor():
         self.robot_img = pygame.transform.rotate(self.original_image, angle_degrees)
         self.rect = self.robot_img.get_rect(center=np.array(self.size)/2 + np.diag([1,-1])@self.x*self.meter_to_pix)
         self.screen.blit(self.robot_img, self.rect)
-        # pygame.display.flip()
+        if self.update_display:
+            pygame.display.flip()
 
     def running(self):
         for event in pygame.event.get():

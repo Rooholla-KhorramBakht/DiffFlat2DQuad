@@ -1,7 +1,7 @@
 # DiffFlatQuad
 <p align="center">
   <img src="docs/without_flatness.gif" alt="GIF 1" width="350"/>
-  <img src="docs/without_flatness.gif" alt="GIF 2" width="350"/>
+  <img src="docs/with_flatness.gif" alt="GIF 2" width="350"/>
 </p>
 This repository is a toy example of employing differential flatness theory to control a simulated 2D planar quadrotor. Given the desired trajectory for the differentially flat outputs of the system, differential flatness theory provides the functions required to compute the full state trajectory and control inputs that lead to that desired output trajectory. Combined with a low-gain PID controller to keep the drone close to the desired path, the differential flatness allows the computation of feed-forward terms that greatly improve the tracking performance.
 
