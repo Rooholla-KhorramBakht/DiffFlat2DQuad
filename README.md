@@ -4,7 +4,7 @@ This repository is a tody example of employing differential flatness theory to c
 ## The Plant and Its Controllability
 The system considered in this project is a planar quadrotor:
 <p align="center">
-  <img src="docs/plant.png" alt="image" width="45%" height="auto"/>
+  <img src="docs/plant.png" alt="image" width="35%" height="auto"/>
 </p>
 
 and is described using 6 states as follows:
@@ -14,7 +14,7 @@ and is described using 6 states as follows:
 \left[\begin{matrix}\operatorname{x_{2}}{\left(t \right)}\\- \frac{\operatorname{u_{1}}{\left(t \right)} \sin{\left(\operatorname{x_{5}}{\left(t \right)} \right)}}{m}\\\operatorname{x_{4}}{\left(t \right)}\\- g + \frac{\operatorname{u_{1}}{\left(t \right)} \cos{\left(\operatorname{x_{5}}{\left(t \right)} \right)}}{m}\\\operatorname{x_{6}}{\left(t \right)}\\\frac{\operatorname{u_{1}}{\left(t \right)}}{J}\end{matrix}\right]
 $ -->
 <p align="center">
-  <img src="docs/plant_eq.png" alt="image" width="45%" height="auto"/>
+  <img src="docs/plant_eq.png" alt="image" width="40%" height="auto"/>
 </p>
 
 Here $x_1, x_3, x_5$ are body $x, \ y, \ \theta$ pose parameters, and $x_2, x_4, x_6$ are the corresponding time derivitives ($v_x, v_y, \omega$). The inputs $u_1, \ u_2$ are collective thrust, $F$, and applied torque, $\tau$ by the actuators. These values are linear functions of idividual propeller thrust values:
@@ -26,7 +26,7 @@ F =& \frac{F_2+F_1}{2}
 $ -->
 
 <p align="center">
-  <img src="docs/mixer_eq.png" alt="image" width="20%" height="auto"/>
+  <img src="docs/mixer_eq.png" alt="image" width="15%" height="auto"/>
 </p>
 
 where $F_1$ and $F_2$ are the thrust produced by the individual propellers and $l$ is the length from the center of the drone to the motor attachment point. Finally, mass and inertia are represented with $m, J$ and gravity with $g$.
@@ -196,7 +196,70 @@ As we can see, even though initially the drone stays close to the desired trajec
 
 ### Close-Loop Control
 
+In this section, we use the methodology described in [here](https://arxiv.org/abs/1712.02402). First, we design a simple PI body rate controller. This is a common practice in drone industrey to control the body angular rate of the drone through the gyroscope measurements feedback to regulate the body torques. As mentioned earlier, the system dynamics from torque to body rate is a simple single integrator and is decoupled from the positional states (neglecting aerodynamics effects).
 
+The PI controller is implemented as follows:
 
+```python
+class PIController():
+    def __init__(self, n, Kp, Ki, dt=0.01):
+        self.dt = dt
+        self.Kp = Kp
+        self.Ki = Ki
+        self.n = n
+        self.e_integrated = np.zeros((n,1))
+    def reset(self):
+        self.e_integrated = np.zeros((self.n,1))    
 
+    def update(self, x, x_des):
+        e = x_des - x
+        self.e_integrated += e * self.dt
+        return self.Kp*e + self.Ki*self.e_integrated
+```
 
+The application of this controller to the simulated drone with $K_p=10, K_i=0.1$ yeilds the following tracking performance:
+
+<p align="center">
+  <img src="results/body_rate_with_PI.png" alt="image" width="75%" height="auto"/>
+</p>
+
+Having this inner-loop body rate controller, we can move on to the outer-loop position controller. Given the desired position and velocity of the robot, we compute a desired acceleration using a PD control law as follows:
+<!-- 
+$
+a_{\text{des}} = K_p(\mathbf{x}-\mathbf{x}_{\text{des}})+K_v(\mathbf{v}-\mathbf{v}_{\text{des}}) + g \mathbf{z}_w
+$ -->
+<p align="center">
+  <img src="docs/desired_accel.png" alt="image" height="auto"/>
+</p>
+
+Here, $\mathbf{z}_w$ is the world frame z-axis direction. We project this acceleration on the body-z axis of the drone ($\mathbf{z}_B$) as follows:
+<!-- F = m \times \mathbf{a}_{des}^T\mathbf{z}_B -->
+
+<p align="center">
+  <img src="docs/pd_thrust_projection.png" alt="image" height="auto"/>
+</p>
+
+Furetheremore, we control the body orientation ($\theta$) such that the body z axis ($\mathbf{Z}_B$) aligns with the direction of the desired acceleration. The implementation of this attitude controller is provided in `controller.ipynb`. The output of this controller is the desired body angular velocity ($\omega_{des}$) which is fed to the inner loop body rate controller to track. 
+
+Implementing this on the simulated robot leads to the following tracking performance:
+
+<p align="center">
+  <img src="results/pd_no_ff_performance.png" alt="image" width="75%" height="auto"/>
+</p>
+
+We note that the robot is not able to accurately track the desired trajectory. This is due to the fact that the controller in this section has no feed-forward terms and the drone has to encounter a tracking error to produce corrective action. 
+
+#### Incorporation of Feed-Forward Terms
+
+Now that we have a quadrotor with close-loop position feedback, we can use the differential flatness analsis we performed earlier to compute feed-forward terms for the body-rate and thrust controllers to eleminate the drift we saw in the previous section. In other words, in this sction the feed-forward terms from the differential flatness studies will guide the drone along the desired trajectory while the PD controller corrects for the numerical integration errors and other sources of uncertainty to keep the drone on the track.
+
+To do this, we simply add a feed-forward acceleration term to the desired acceleration computed in the previous section and compute the thrust command as $F = m \times (\mathbf{a}_{des}+\mathbf{a}_{ref})^T\mathbf{z}_B$. Additionally, we use the $\beta(.)$ function to get the body angular rate corresponding to the desired flat-output trajectory and add it to the $\omega_{des}$ from the previous section before feeding it to the body rate controller. With this modification, we achieve the follwoing result:
+
+<p align="center">
+  <img src="results/pd_with_ff_performance.png" alt="image" width="75%" height="auto"/>
+</p>
+
+As expected, the drift is completely ellimintated and the drone sticks to the desired trajectory very closely.
+
+## Conclusion
+This project provided a simple toy example that to illustrate the ideas behind exploiting the differential flatness of quadrotor dynamics for accurate pose tracking of this wonderful robot. These ideas can be easily extended to the full 3D quadrotor system. In the future, this extension will be done and a link to it will be added [here]().
